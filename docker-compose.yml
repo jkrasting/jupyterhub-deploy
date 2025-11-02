@@ -14,7 +14,7 @@ services:
     command: jupyterhub -f /etc/jupyterhub/jupyterhub_config.py
 
     ports:
-      - "8000:8000"
+      - "8088:8000"
 
     volumes:
       - ./jupyterhub_config.py:/etc/jupyterhub/jupyterhub_config.py

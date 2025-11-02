@@ -1,4 +1,4 @@
-# docker-compose.yml (v2.3 - Secure Secret Management)
+# docker-compose.yml (v2.5 - Explicit Network Name)
 version: "3.8"
 
 services:
@@ -8,13 +8,12 @@ services:
     restart: unless-stopped
 
     environment:
-      # This value will be injected by Portainer at runtime
       JUPYTERHUB_CRYPT_KEY: ${JUPYTERHUB_CRYPT_KEY}
 
     command: jupyterhub -f /etc/jupyterhub/jupyterhub_config.py
 
     ports:
-      - "8088:8000"
+      - "8000:8000"
 
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
@@ -25,6 +24,9 @@ services:
 
 networks:
   jupyterhub-network:
+    # THIS IS THE FIX:
+    # Explicitly name the network to prevent a stack prefix.
+    name: jupyterhub-network
 
 volumes:
   jupyterhub-data:

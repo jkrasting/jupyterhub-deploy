@@ -1,0 +1,31 @@
+# docker-compose.yml (v2.3 - Secure Secret Management)
+version: "3.8"
+
+services:
+  jupyterhub:
+    build: .
+    container_name: jupyterhub_service
+    restart: unless-stopped
+
+    environment:
+      # This value will be injected by Portainer at runtime
+      JUPYTERHUB_CRYPT_KEY: ${JUPYTERHUB_CRYPT_KEY}
+
+    command: jupyterhub -f /etc/jupyterhub/jupyterhub_config.py
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - ./jupyterhub_config.py:/etc/jupyterhub/jupyterhub_config.py
+      - /var/run/docker.sock:/var/run/docker.sock
+      - jupyterhub-data:/srv/jupyterhub
+
+    networks:
+      - jupyterhub-network
+
+networks:
+  jupyterhub-network:
+
+volumes:
+  jupyterhub-data:

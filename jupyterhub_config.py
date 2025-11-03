@@ -1,4 +1,4 @@
-# /opt/jupyterhub/jupyterhub_config.py (v4.6 - The Official Method)
+# /opt/jupyterhub/jupyterhub_config.py (v4.7 - The Complete Official Method)
 import os
 import pwd
 import grp
@@ -10,14 +10,10 @@ def pre_spawn_hook(spawner):
         user_info = pwd.getpwnam(username)
         uid = user_info.pw_uid
         gid = user_info.pw_gid
-
-        # THIS IS THE FIX:
         # Set the environment variables the jupyter/docker-stacks images expect
         spawner.environment['NB_UID'] = str(uid)
         spawner.environment['NB_GID'] = str(gid)
-        # Grant sudo access to the user inside the container
         spawner.environment['GRANT_SUDO'] = 'yes'
-
     except KeyError:
         spawner.log.warning(
             f"User '{username}' not found on the host. "
@@ -50,8 +46,12 @@ c.DockerSpawner.remove = True
 c.DockerSpawner.volumes = {
     '/home/{username}': '/home/jovyan/work'
 }
-# Assign the hook. The container will start as root by default, which is correct.
 c.DockerSpawner.pre_spawn_hook = pre_spawn_hook
+
+# THIS IS THE FIX:
+# Re-add this line. The container MUST start as root for the
+# NB_UID/NB_GID environment variables to be effective.
+c.DockerSpawner.user = 'root'
 
 # --- Network & URL Configuration (no changes) ---
 c.JupyterHub.hub_ip = '0.0.0.0'

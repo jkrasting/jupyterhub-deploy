@@ -1,4 +1,4 @@
-# /opt/jupyterhub/jupyterhub_config.py (v4.5 - Definitive UID Fix)
+# /opt/jupyterhub/jupyterhub_config.py (v4.6 - The Official Method)
 import os
 import pwd
 import grp
@@ -12,10 +12,11 @@ def pre_spawn_hook(spawner):
         gid = user_info.pw_gid
 
         # THIS IS THE FIX:
-        # Pass the user ID directly to the container creation call
-        # using the correct 'extra_create_kwargs' dictionary.
-        # This does not corrupt the spawner object.
-        spawner.extra_create_kwargs['user'] = f'{uid}:{gid}'
+        # Set the environment variables the jupyter/docker-stacks images expect
+        spawner.environment['NB_UID'] = str(uid)
+        spawner.environment['NB_GID'] = str(gid)
+        # Grant sudo access to the user inside the container
+        spawner.environment['GRANT_SUDO'] = 'yes'
 
     except KeyError:
         spawner.log.warning(
@@ -26,6 +27,7 @@ def pre_spawn_hook(spawner):
 # --- Authenticator Configuration (no changes) ---
 from oauthenticator.generic import GenericOAuthenticator
 c.JupyterHub.authenticator_class = GenericOAuthenticator
+# ... (all your GenericOAuthenticator settings remain the same) ...
 c.GenericOAuthenticator.client_id = os.environ.get('OAUTH_CLIENT_ID')
 c.GenericOAuthenticator.client_secret = os.environ.get('OAUTH_CLIENT_SECRET')
 c.GenericOAuthenticator.oauth_callback_url = 'https://jupyterhub.krasting.org/hub/oauth_callback'
@@ -48,6 +50,7 @@ c.DockerSpawner.remove = True
 c.DockerSpawner.volumes = {
     '/home/{username}': '/home/jovyan/work'
 }
+# Assign the hook. The container will start as root by default, which is correct.
 c.DockerSpawner.pre_spawn_hook = pre_spawn_hook
 
 # --- Network & URL Configuration (no changes) ---

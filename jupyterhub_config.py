@@ -1,17 +1,25 @@
-# /opt/jupyterhub/jupyterhub_config.py (v4.2 - Run as Root)
+# /opt/jupyterhub/jupyterhub_config.py (v4.3 - Force UID with extra_host_config)
 import os
 import pwd
 import grp
 
-# --- Pre-Spawn Hook for UID/GID Mapping (no changes) ---
+# --- Pre-Spawn Hook for UID/GID Mapping ---
+# This function now directly configures the Docker container's user.
 def pre_spawn_hook(spawner):
     username = spawner.user.name
     try:
         user_info = pwd.getpwnam(username)
         uid = user_info.pw_uid
         gid = user_info.pw_gid
-        spawner.environment['NB_UID'] = str(uid)
-        spawner.environment['NB_GID'] = str(gid)
+
+        # THIS IS THE FIX:
+        # Directly set the --user argument for the Docker container.
+        # This forces the container to start with the correct UID/GID.
+        spawner.extra_host_config = {
+            'user': f'{uid}:{gid}'
+        }
+        # We no longer need to set NB_UID/NB_GID or start as root.
+
     except KeyError:
         spawner.log.warning(
             f"User '{username}' not found on the host. "
@@ -21,7 +29,6 @@ def pre_spawn_hook(spawner):
 # --- Authenticator Configuration (no changes) ---
 from oauthenticator.generic import GenericOAuthenticator
 c.JupyterHub.authenticator_class = GenericOAuthenticator
-# ... (all your GenericOAuthenticator settings remain the same) ...
 c.GenericOAuthenticator.client_id = os.environ.get('OAUTH_CLIENT_ID')
 c.GenericOAuthenticator.client_secret = os.environ.get('OAUTH_CLIENT_SECRET')
 c.GenericOAuthenticator.oauth_callback_url = 'https://jupyterhub.krasting.org/hub/oauth_callback'
@@ -46,10 +53,7 @@ c.DockerSpawner.volumes = {
 }
 c.DockerSpawner.pre_spawn_hook = pre_spawn_hook
 
-# THIS IS THE FIX:
-# Start the user container as root, so the startup script can change
-# the jovyan user's UID/GID before launching.
-c.DockerSpawner.user = 'root'
+# The c.DockerSpawner.user = 'root' line has been removed as this new method is more specific.
 
 # --- Network & URL Configuration (no changes) ---
 c.JupyterHub.hub_ip = '0.0.0.0'

@@ -9,6 +9,9 @@ services:
 
     environment:
       JUPYTERHUB_CRYPT_KEY: ${JUPYTERHUB_CRYPT_KEY}
+      OAUTH_CLIENT_ID: ${OAUTH_CLIENT_ID}
+      OAUTH_CLIENT_SECRET: ${OAUTH_CLIENT_SECRET}
+      OIDC_ISSUER: ${OIDC_ISSUER}
 
     command: jupyterhub -f /etc/jupyterhub/jupyterhub_config.py
 

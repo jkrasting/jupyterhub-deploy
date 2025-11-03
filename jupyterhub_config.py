@@ -22,6 +22,11 @@ c.GenericOAuthenticator.userdata_url = os.environ.get('OAUTH_USERDATA_URL')
 # How to find the username in the userdata response (no change)
 c.GenericOAuthenticator.username_claim = "preferred_username"
 
+# Authorize a specific list of users to access the hub.
+# The usernames must match the 'preferred_username' from Authentik.
+c.Authenticator.allowed_users = {'krasting'}
+c.Authenticator.admin_users = {'krasting'}
+
 # --- Spawner Configuration (no change) ---
 from dockerspawner import DockerSpawner
 c.JupyterHub.spawner_class = DockerSpawner

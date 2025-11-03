@@ -1,10 +1,9 @@
-# /opt/jupyterhub/jupyterhub_config.py (v4.4 - Correct Spawner User API)
+# /opt/jupyterhub/jupyterhub_config.py (v4.5 - Definitive UID Fix)
 import os
 import pwd
 import grp
 
 # --- Pre-Spawn Hook for UID/GID Mapping ---
-# This function now sets the correct spawner.user attribute.
 def pre_spawn_hook(spawner):
     username = spawner.user.name
     try:
@@ -13,9 +12,10 @@ def pre_spawn_hook(spawner):
         gid = user_info.pw_gid
 
         # THIS IS THE FIX:
-        # Set the user attribute directly on the spawner object.
-        # This is the correct API for this purpose.
-        spawner.user = f'{uid}:{gid}'
+        # Pass the user ID directly to the container creation call
+        # using the correct 'extra_create_kwargs' dictionary.
+        # This does not corrupt the spawner object.
+        spawner.extra_create_kwargs['user'] = f'{uid}:{gid}'
 
     except KeyError:
         spawner.log.warning(
@@ -29,7 +29,6 @@ c.JupyterHub.authenticator_class = GenericOAuthenticator
 c.GenericOAuthenticator.client_id = os.environ.get('OAUTH_CLIENT_ID')
 c.GenericOAuthenticator.client_secret = os.environ.get('OAUTH_CLIENT_SECRET')
 c.GenericOAuthenticator.oauth_callback_url = 'https://jupyterhub.krasting.org/hub/oauth_callback'
-# The oidc_issuer is deprecated but harmless to keep for now.
 c.GenericOAuthenticator.oidc_issuer = os.environ.get('OIDC_ISSUER')
 c.GenericOAuthenticator.authorize_url = os.environ.get('OAUTH_AUTHORIZE_URL')
 c.GenericOAuthenticator.token_url = os.environ.get('OAUTH_TOKEN_URL')

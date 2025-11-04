@@ -1,4 +1,4 @@
-# /opt/jupyterhub/jupyterhub_config.py (v5.3 - DEBUG VERSION - Won't remove containers)
+# /opt/jupyterhub/jupyterhub_config.py (v5.4 - WORKING VERSION)
 import os
 import pwd
 import grp
@@ -17,11 +17,12 @@ def pre_spawn_hook(spawner):
         spawner.log.info(f"Found user '{username}' with UID={uid}, GID={gid}")
         
         # Set the environment variables that jupyter/docker-stacks images use
+        # We only set UID/GID, NOT the username - let it stay as 'jovyan'
         spawner.environment['NB_UID'] = str(uid)
         spawner.environment['NB_GID'] = str(gid)
-        spawner.environment['NB_USER'] = username
-        # DON'T chown the home directory - it's a mounted volume from the host
-        spawner.environment['CHOWN_HOME'] = 'no'
+        # DON'T set NB_USER - keep the default 'jovyan' username in the container
+        spawner.environment['CHOWN_HOME'] = 'yes'
+        spawner.environment['CHOWN_HOME_OPTS'] = '-R'
         
     except KeyError:
         spawner.log.error(
@@ -52,9 +53,7 @@ from dockerspawner import DockerSpawner
 c.JupyterHub.spawner_class = DockerSpawner
 c.DockerSpawner.image = 'jupyter/scipy-notebook:latest'
 c.DockerSpawner.network_name = 'jupyterhub-network'
-
-# DEBUG: Don't remove containers so we can inspect them
-c.DockerSpawner.remove = False
+c.DockerSpawner.remove = True
 
 # Volume mapping - mount host user's home to /home/jovyan/work
 c.DockerSpawner.volumes = {
@@ -66,13 +65,6 @@ c.DockerSpawner.extra_create_kwargs = {'user': 'root'}
 
 # Format the volume paths with the actual username
 c.DockerSpawner.format_volume_name = lambda name, spawner: name.format(username=spawner.user.name)
-
-# Increase timeout for slow starts
-c.DockerSpawner.http_timeout = 120
-c.DockerSpawner.start_timeout = 120
-
-# Add debug logging
-c.DockerSpawner.debug = True
 
 # --- Network & URL Configuration ---
 c.JupyterHub.hub_ip = '0.0.0.0'

@@ -1,4 +1,4 @@
-# /opt/jupyterhub/jupyterhub_config.py (v5.0 - Fixed UID/GID Mapping)
+# /opt/jupyterhub/jupyterhub_config.py (v5.1 - Fixed UID/GID Mapping - CORRECTED)
 import os
 import pwd
 import grp
@@ -38,7 +38,6 @@ c.JupyterHub.authenticator_class = GenericOAuthenticator
 c.GenericOAuthenticator.client_id = os.environ.get('OAUTH_CLIENT_ID')
 c.GenericOAuthenticator.client_secret = os.environ.get('OAUTH_CLIENT_SECRET')
 c.GenericOAuthenticator.oauth_callback_url = 'https://jupyterhub.krasting.org/hub/oauth_callback'
-c.GenericOAuthenticator.oidc_issuer = os.environ.get('OIDC_ISSUER')
 c.GenericOAuthenticator.authorize_url = os.environ.get('OAUTH_AUTHORIZE_URL')
 c.GenericOAuthenticator.token_url = os.environ.get('OAUTH_TOKEN_URL')
 c.GenericOAuthenticator.userdata_url = os.environ.get('OAUTH_USERDATA_URL')
@@ -55,17 +54,20 @@ c.DockerSpawner.image = 'jupyter/scipy-notebook:latest'
 c.DockerSpawner.network_name = 'jupyterhub-network'
 c.DockerSpawner.remove = True
 
-# Volume mapping - mount host user's home to /home/jovyan (not /home/jovyan/work)
+# Volume mapping - mount host user's home to /home/jovyan/work
 c.DockerSpawner.volumes = {
-    '/home/{username}': '/home/jovyan'
+    '/home/{username}': '/home/jovyan/work'
 }
 
 # CRITICAL: Container must start as root for NB_UID/NB_GID to work
 # The jupyter/docker-stacks start.sh script will switch to the correct user
-c.DockerSpawner.user = 'root'
+c.DockerSpawner.extra_create_kwargs = {'user': 'root'}
 
 # Format the volume paths with the actual username
 c.DockerSpawner.format_volume_name = lambda name, spawner: name.format(username=spawner.user.name)
+
+# Add debug logging
+c.DockerSpawner.debug = True
 
 # --- Network & URL Configuration ---
 c.JupyterHub.hub_ip = '0.0.0.0'

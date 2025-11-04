@@ -1,4 +1,4 @@
-# docker-compose.yml (v2.5 - Explicit Network Name)
+# docker-compose.yml (v2.6 - Added home directory mount)
 version: "3.8"
 
 services:
@@ -26,6 +26,7 @@ services:
       - jupyterhub-data:/srv/jupyterhub
       - /etc/passwd:/etc/passwd:ro
       - /etc/group:/etc/group:ro
+      - /home:/home:rw
 
     networks:
       - jupyterhub-network

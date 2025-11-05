@@ -1,4 +1,4 @@
-# docker-compose.yml (v2.6 - Added home directory mount)
+# docker-compose.yml (v2.8 - Added /storage mount)
 version: "3.8"
 
 services:
@@ -27,14 +27,13 @@ services:
       - /etc/passwd:/etc/passwd:ro
       - /etc/group:/etc/group:ro
       - /home:/home:rw
+      - /storage:/storage:rw
 
     networks:
       - jupyterhub-network
 
 networks:
   jupyterhub-network:
-    # THIS IS THE FIX:
-    # Explicitly name the network to prevent a stack prefix.
     name: jupyterhub-network
 
 volumes:

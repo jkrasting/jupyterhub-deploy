@@ -1,4 +1,4 @@
-# /opt/jupyterhub/jupyterhub_config.py (v5.7 - Fixed hardcoded conda paths)
+# /opt/jupyterhub/jupyterhub_config.py (v5.8 - Fixed volume formatting + /storage mount)
 import os
 import pwd
 import grp
@@ -26,6 +26,13 @@ def pre_spawn_hook(spawner):
         
         # Set Jupyter to look for kernels and data in the persistent mounted directory
         spawner.environment['JUPYTER_DATA_DIR'] = '/home/jovyan/work/.local/share/jupyter'
+        
+        # Format the volumes with the actual username
+        # Mount user's home in TWO places + /storage
+        spawner.volumes = {
+            f'/home/{username}': ['/home/jovyan/work', f'/home/{username}'],
+            '/storage': '/storage'
+        }
         
     except KeyError:
         spawner.log.error(
@@ -58,18 +65,8 @@ c.DockerSpawner.image = 'jupyter/scipy-notebook:latest'
 c.DockerSpawner.network_name = 'jupyterhub-network'
 c.DockerSpawner.remove = True
 
-# Volume mapping - mount user's home in TWO places:
-# 1. /home/jovyan/work - for Jupyter's working directory
-# 2. /home/{username} - so conda's hardcoded paths work correctly
-c.DockerSpawner.volumes = {
-    '/home/{username}': ['/home/jovyan/work', '/home/{username}']
-}
-
 # CRITICAL: Container must start as root for NB_UID/NB_GID to work
 c.DockerSpawner.extra_create_kwargs = {'user': 'root'}
-
-# Format the volume paths with the actual username
-c.DockerSpawner.format_volume_name = lambda name, spawner: name.format(username=spawner.user.name)
 
 # --- Network & URL Configuration ---
 c.JupyterHub.hub_ip = '0.0.0.0'

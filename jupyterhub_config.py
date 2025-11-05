@@ -1,4 +1,4 @@
-# /opt/jupyterhub/jupyterhub_config.py (v5.4 - WORKING VERSION)
+# /opt/jupyterhub/jupyterhub_config.py (v5.6 - Persistent kernel specs)
 import os
 import pwd
 import grp
@@ -23,6 +23,9 @@ def pre_spawn_hook(spawner):
         # DON'T set NB_USER - keep the default 'jovyan' username in the container
         spawner.environment['CHOWN_HOME'] = 'yes'
         spawner.environment['CHOWN_HOME_OPTS'] = '-R'
+        
+        # Set Jupyter to look for kernels and data in the persistent mounted directory
+        spawner.environment['JUPYTER_DATA_DIR'] = '/home/jovyan/work/.local/share/jupyter'
         
     except KeyError:
         spawner.log.error(

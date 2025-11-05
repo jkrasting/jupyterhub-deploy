@@ -1,4 +1,4 @@
-# /opt/jupyterhub/jupyterhub_config.py (v5.8 - Fixed volume formatting + /storage mount)
+# /opt/jupyterhub/jupyterhub_config.py (v6.0 - Simplest approach)
 import os
 import pwd
 import grp
@@ -24,13 +24,12 @@ def pre_spawn_hook(spawner):
         spawner.environment['CHOWN_HOME'] = 'yes'
         spawner.environment['CHOWN_HOME_OPTS'] = '-R'
         
-        # Set Jupyter to look for kernels and data in the persistent mounted directory
-        spawner.environment['JUPYTER_DATA_DIR'] = '/home/jovyan/work/.local/share/jupyter'
+        # Set Jupyter to look for kernels at the host path location
+        spawner.environment['JUPYTER_DATA_DIR'] = f'/home/{username}/.local/share/jupyter'
         
-        # Format the volumes with the actual username
-        # Mount user's home in TWO places + /storage
+        # Simple volume mounts - mount at the original paths
         spawner.volumes = {
-            f'/home/{username}': ['/home/jovyan/work', f'/home/{username}'],
+            f'/home/{username}': f'/home/{username}',
             '/storage': '/storage'
         }
         

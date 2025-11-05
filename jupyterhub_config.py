@@ -1,4 +1,4 @@
-# /opt/jupyterhub/jupyterhub_config.py (v5.6 - Persistent kernel specs)
+# /opt/jupyterhub/jupyterhub_config.py (v5.7 - Fixed hardcoded conda paths)
 import os
 import pwd
 import grp
@@ -58,9 +58,11 @@ c.DockerSpawner.image = 'jupyter/scipy-notebook:latest'
 c.DockerSpawner.network_name = 'jupyterhub-network'
 c.DockerSpawner.remove = True
 
-# Volume mapping - mount host user's home to /home/jovyan/work
+# Volume mapping - mount user's home in TWO places:
+# 1. /home/jovyan/work - for Jupyter's working directory
+# 2. /home/{username} - so conda's hardcoded paths work correctly
 c.DockerSpawner.volumes = {
-    '/home/{username}': '/home/jovyan/work'
+    '/home/{username}': ['/home/jovyan/work', '/home/{username}']
 }
 
 # CRITICAL: Container must start as root for NB_UID/NB_GID to work

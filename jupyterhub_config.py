@@ -1,4 +1,4 @@
-# /opt/jupyterhub/jupyterhub_config.py (v6.0 - Simplest approach)
+# /opt/jupyterhub/jupyterhub_config.py (v6.1 - Start in /home/krasting)
 import os
 import pwd
 import grp
@@ -32,6 +32,9 @@ def pre_spawn_hook(spawner):
             f'/home/{username}': f'/home/{username}',
             '/storage': '/storage'
         }
+        
+        # Set the notebook directory to the user's home
+        spawner.notebook_dir = f'/home/{username}'
         
     except KeyError:
         spawner.log.error(

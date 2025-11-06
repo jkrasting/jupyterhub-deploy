@@ -1,4 +1,4 @@
-# /opt/jupyterhub/jupyterhub_config.py (v6.6 - Fixed image pull policy)
+# /opt/jupyterhub/jupyterhub_config.py (v6.7 - Fixed SSH symlink)
 import os
 import pwd
 import grp
@@ -51,7 +51,19 @@ def pre_spawn_hook(spawner):
         )
         raise
 
+# Post-start hook to create SSH symlink after container starts
+def post_start_hook(spawner):
+    username = spawner.user.name
+    spawner.log.info(f"Post-start hook: Creating SSH symlink for {username}")
+    # Execute command in the running container
+    import docker
+    client = docker.from_env()
+    container = client.containers.get(f'jupyter-{username}')
+    result = container.exec_run(f'ln -sf /home/{username}/.ssh /home/jovyan/.ssh')
+    spawner.log.info(f"SSH symlink result: {result}")
+
 c.DockerSpawner.pre_spawn_hook = pre_spawn_hook
+c.DockerSpawner.post_start_hook = post_start_hook
 
 # --- Authenticator Configuration ---
 from oauthenticator.generic import GenericOAuthenticator
@@ -78,9 +90,6 @@ c.DockerSpawner.remove = True
 
 # Don't try to pull the image - use local image only
 c.DockerSpawner.pull_policy = 'Never'
-
-# Add a post-start command to create the SSH symlink
-c.DockerSpawner.post_start_cmd = 'ln -sf /home/{username}/.ssh /home/jovyan/.ssh'
 
 # CRITICAL: Container must start as root for NB_UID/NB_GID to work
 c.DockerSpawner.extra_create_kwargs = {'user': 'root'}

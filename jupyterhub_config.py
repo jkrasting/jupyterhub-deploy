@@ -1,4 +1,4 @@
-# /opt/jupyterhub/jupyterhub_config.py (v6.7 - Fixed SSH symlink)
+# /opt/jupyterhub/jupyterhub_config.py (v6.9 - Fixed with custom env var)
 import os
 import pwd
 import grp
@@ -17,12 +17,14 @@ def pre_spawn_hook(spawner):
         spawner.log.info(f"Found user '{username}' with UID={uid}, GID={gid}")
         
         # Set the environment variables that jupyter/docker-stacks images use
-        # We only set UID/GID, NOT the username - let it stay as 'jovyan'
         spawner.environment['NB_UID'] = str(uid)
         spawner.environment['NB_GID'] = str(gid)
         # DON'T set NB_USER - keep the default 'jovyan' username in the container
         spawner.environment['CHOWN_HOME'] = 'yes'
         spawner.environment['CHOWN_HOME_OPTS'] = '-R'
+        
+        # Pass username as custom env var for SSH symlink (doesn't trigger renaming)
+        spawner.environment['HOST_USERNAME'] = username
         
         # Set Jupyter to look for kernels at the host path location
         spawner.environment['JUPYTER_DATA_DIR'] = f'/home/{username}/.local/share/jupyter'
@@ -37,7 +39,6 @@ def pre_spawn_hook(spawner):
         spawner.notebook_dir = f'/home/{username}'
         
         # Allow container to access host's SSH tunnels
-        # This gives access to ALL forwarded ports (6022, 6023, etc.)
         spawner.extra_host_config = {
             'extra_hosts': {
                 'host.docker.internal': 'host-gateway'
@@ -51,19 +52,7 @@ def pre_spawn_hook(spawner):
         )
         raise
 
-# Post-start hook to create SSH symlink after container starts
-def post_start_hook(spawner):
-    username = spawner.user.name
-    spawner.log.info(f"Post-start hook: Creating SSH symlink for {username}")
-    # Execute command in the running container
-    import docker
-    client = docker.from_env()
-    container = client.containers.get(f'jupyter-{username}')
-    result = container.exec_run(f'ln -sf /home/{username}/.ssh /home/jovyan/.ssh')
-    spawner.log.info(f"SSH symlink result: {result}")
-
 c.DockerSpawner.pre_spawn_hook = pre_spawn_hook
-c.DockerSpawner.post_start_hook = post_start_hook
 
 # --- Authenticator Configuration ---
 from oauthenticator.generic import GenericOAuthenticator
@@ -83,15 +72,10 @@ c.Authenticator.admin_users = {'krasting'}
 # --- Spawner Configuration ---
 from dockerspawner import DockerSpawner
 c.JupyterHub.spawner_class = DockerSpawner
-# Use our custom notebook image with Dask pre-installed
 c.DockerSpawner.image = 'jupyterhub-notebook-dask:latest'
 c.DockerSpawner.network_name = 'jupyterhub-network'
 c.DockerSpawner.remove = True
-
-# Don't try to pull the image - use local image only
 c.DockerSpawner.pull_policy = 'Never'
-
-# CRITICAL: Container must start as root for NB_UID/NB_GID to work
 c.DockerSpawner.extra_create_kwargs = {'user': 'root'}
 
 # --- Network & URL Configuration ---

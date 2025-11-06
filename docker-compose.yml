@@ -1,4 +1,4 @@
-# docker-compose.yml (v2.8 - Added /storage mount)
+# docker-compose.yml (v2.9 - Build custom notebook image)
 version: "3.8"
 
 services:

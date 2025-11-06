@@ -1,0 +1,17 @@
+# Dockerfile.notebook - Custom notebook image with Dask extension
+FROM jupyter/scipy-notebook:latest
+
+USER root
+
+# Install any system packages if needed
+# RUN apt-get update && apt-get install -y <packages> && apt-get clean
+
+USER ${NB_UID}
+
+# Install Dask labextension
+RUN pip install --no-cache-dir dask-labextension
+
+# Pre-build JupyterLab to include the extension
+RUN jupyter lab build
+
+USER root

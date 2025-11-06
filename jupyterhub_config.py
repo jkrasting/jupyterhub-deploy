@@ -1,4 +1,4 @@
-# /opt/jupyterhub/jupyterhub_config.py (v6.1 - Start in /home/krasting)
+# /opt/jupyterhub/jupyterhub_config.py (v6.5 - Custom notebook image with Dask)
 import os
 import pwd
 import grp
@@ -36,6 +36,14 @@ def pre_spawn_hook(spawner):
         # Set the notebook directory to the user's home
         spawner.notebook_dir = f'/home/{username}'
         
+        # Allow container to access host's SSH tunnels
+        # This gives access to ALL forwarded ports (6022, 6023, etc.)
+        spawner.extra_host_config = {
+            'extra_hosts': {
+                'host.docker.internal': 'host-gateway'
+            }
+        }
+        
     except KeyError:
         spawner.log.error(
             f"User '{username}' not found in /etc/passwd on the host. "
@@ -63,9 +71,13 @@ c.Authenticator.admin_users = {'krasting'}
 # --- Spawner Configuration ---
 from dockerspawner import DockerSpawner
 c.JupyterHub.spawner_class = DockerSpawner
-c.DockerSpawner.image = 'jupyter/scipy-notebook:latest'
+# Use our custom notebook image with Dask pre-installed
+c.DockerSpawner.image = 'jupyterhub-notebook-dask:latest'
 c.DockerSpawner.network_name = 'jupyterhub-network'
 c.DockerSpawner.remove = True
+
+# Add a post-start command to create the SSH symlink
+c.DockerSpawner.post_start_cmd = 'ln -sf /home/{username}/.ssh /home/jovyan/.ssh'
 
 # CRITICAL: Container must start as root for NB_UID/NB_GID to work
 c.DockerSpawner.extra_create_kwargs = {'user': 'root'}

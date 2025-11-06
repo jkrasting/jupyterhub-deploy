@@ -1,4 +1,4 @@
-# /opt/jupyterhub/jupyterhub_config.py (v6.5 - Custom notebook image with Dask)
+# /opt/jupyterhub/jupyterhub_config.py (v6.6 - Fixed image pull policy)
 import os
 import pwd
 import grp
@@ -75,6 +75,9 @@ c.JupyterHub.spawner_class = DockerSpawner
 c.DockerSpawner.image = 'jupyterhub-notebook-dask:latest'
 c.DockerSpawner.network_name = 'jupyterhub-network'
 c.DockerSpawner.remove = True
+
+# Don't try to pull the image - use local image only
+c.DockerSpawner.pull_policy = 'Never'
 
 # Add a post-start command to create the SSH symlink
 c.DockerSpawner.post_start_cmd = 'ln -sf /home/{username}/.ssh /home/jovyan/.ssh'
